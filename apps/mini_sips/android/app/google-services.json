@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "890113637268",
+    "project_id": "minisips-6fda0",
+    "storage_bucket": "minisips-6fda0.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:890113637268:android:cc7d59d6649436c9af2d81",
+        "android_client_info": {
+          "package_name": "tk.vrk.mini_sips"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDE99CMBih8zbiCCf6l_3WnKQ-HgVcLOJU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,38 @@
+name: Tests
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+      - develop
+
+# Declare default permissions as read only.
+permissions: read-all
+
+jobs:
+  unit-test:
+    name: Validate project on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ ubuntu-latest ]
+    steps:
+      # Set up Flutter.
+      - name: Clone Flutter repository
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.16.5'
+          channel: 'stable'
+      - run: flutter doctor -v
+
+      # Checkout code and get packages.
+      - name: Checkout source code
+        uses: actions/checkout@v3
+      - run: flutter pub get
+
+      # Analyze, check formatting, and run unit tests.
+      - run: flutter analyze
+      - name: Ensure the Dart code is formatted correctly
+        run: dart format --set-exit-if-changed .
+#      - name: Run Flutter unit tests
+#        run: flutter test
