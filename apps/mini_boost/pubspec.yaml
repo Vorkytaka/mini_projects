@@ -20,7 +20,18 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  flutter_launcher_icons: ^0.13.1
   flutter_lints: ^2.0.0
 
 flutter:
   uses-material-design: true
+
+# To recreate launcher icons use this command:
+# flutter pub run flutter_launcher_icons
+flutter_icons:
+#  android: "ic_launcher"
+  ios: true
+#  image_path: "assets/logo/logo-android.png"
+  image_path_ios: "assets/icon/iOS.png"
+#  adaptive_icon_background: "#fafafa"
+#  adaptive_icon_foreground: "assets/logo/logo-android-foreground.png"
