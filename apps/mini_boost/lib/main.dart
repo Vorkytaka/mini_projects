@@ -1,3 +1,6 @@
+import 'dart:math';
+
+import 'package:confetti/confetti.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -6,6 +9,12 @@ import 'package:mini_design/base.dart';
 import 'package:mini_design/components.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:streaming_shared_preferences/streaming_shared_preferences.dart';
+
+const String kGoalKey = 'goal';
+const String kCurrentKey = 'current';
+
+const String kAppGroup = 'group.tv.vrk.mini.boost';
+const String kIOSWidgetName = 'Widgets';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,11 +42,11 @@ class SharedPreferencesWidget extends InheritedWidget {
   }
 
   static Preference<int> goal(BuildContext context) {
-    return preferences(context).getInt('goal', defaultValue: 0);
+    return preferences(context).getInt(kGoalKey, defaultValue: 0);
   }
 
   static Preference<int> currentLeft(BuildContext context) {
-    return preferences(context).getInt('current', defaultValue: -1);
+    return preferences(context).getInt(kCurrentKey, defaultValue: -1);
   }
 }
 
@@ -49,19 +58,19 @@ class HomeWidgetManager {
   });
 
   Future<void> init() async {
-    await HomeWidget.setAppGroupId('group.tv.vrk.mini.boost');
+    await HomeWidget.setAppGroupId(kAppGroup);
 
-    final goalPref = sharedPreferences.getInt('goal', defaultValue: 0);
-    final currentPref = sharedPreferences.getInt('current', defaultValue: -1);
+    final goalPref = sharedPreferences.getInt(kGoalKey, defaultValue: 0);
+    final currentPref = sharedPreferences.getInt(kCurrentKey, defaultValue: -1);
 
     goalPref.listen((value) {
-      HomeWidget.saveWidgetData('goal', value)
-          .then((value) => HomeWidget.updateWidget(iOSName: 'Widgets'));
+      HomeWidget.saveWidgetData(kGoalKey, value)
+          .then((value) => HomeWidget.updateWidget(iOSName: kIOSWidgetName));
     });
 
     currentPref.listen((value) {
-      HomeWidget.saveWidgetData('current', value)
-          .then((value) => HomeWidget.updateWidget(iOSName: 'Widgets'));
+      HomeWidget.saveWidgetData(kCurrentKey, value)
+          .then((value) => HomeWidget.updateWidget(iOSName: kIOSWidgetName));
     });
   }
 }
@@ -120,107 +129,130 @@ class Body extends StatelessWidget {
   Widget build(BuildContext context) {
     final goalPref = SharedPreferencesWidget.goal(context);
     final currentPref = SharedPreferencesWidget.currentLeft(context);
+    final confettiController =
+        ConfettiController(duration: const Duration(seconds: 5));
 
-    return StreamBuilder(
-      stream: CombineLatestStream.combine2(
-        goalPref,
-        currentPref,
-        (goal, current) => (goal, current),
-      ),
-      initialData: (goalPref.getValue(), currentPref.getValue()),
-      builder: (context, snapshot) {
-        final data = snapshot.data!;
+    return ConfettiWidget(
+      confettiController: confettiController,
+      blastDirectionality: BlastDirectionality.explosive,
+      shouldLoop: false,
+      colors: const [
+        Colors.green,
+        Colors.blue,
+        Colors.pink,
+        Colors.orange,
+        Colors.purple
+      ],
+      numberOfParticles: 30,
+      blastDirection: pi / 2,
+      child: StreamBuilder(
+        stream: CombineLatestStream.combine2(
+          goalPref,
+          currentPref,
+          (goal, current) => (goal, current),
+        ),
+        initialData: (goalPref.getValue(), currentPref.getValue()),
+        builder: (context, snapshot) {
+          final data = snapshot.data!;
 
-        final theme = Theme.of(context);
+          final theme = Theme.of(context);
 
-        final goal = data.$1;
-        final current = data.$2;
+          final goal = data.$1;
+          final current = data.$2;
 
-        if (goal == 0) {
-          return const SetGoalBody();
-        }
+          if (goal == 0) {
+            return const SetGoalBody();
+          }
 
-        return Padding(
-          padding: kGroupHorizontalPadding.copyWith(
-            top: 12,
-          ),
-          child: MiniGroup(
-            footer: const Text(
-                'Регулярные тренировки в спортзале укрепляют тело, повышают выносливость, улучшают обмен веществ и снижают стресс. Это инвестиция в ваше будущее здоровье.'),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Center(
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        SizedBox.square(
-                          dimension: 240,
-                          child: CircularProgressIndicator(
-                            value: 1 - current / goal,
-                            strokeCap: StrokeCap.round,
-                            color: theme.colorScheme.primary,
-                            backgroundColor:
-                                theme.colorScheme.primary.withOpacity(0.2),
-                            strokeWidth: 24,
-                            strokeAlign: -1,
+          return Padding(
+            padding: kGroupHorizontalPadding.copyWith(
+              top: 12,
+            ),
+            child: MiniGroup(
+              footer: const Text(
+                  'Регулярные тренировки в спортзале укрепляют тело, повышают выносливость, улучшают обмен веществ и снижают стресс. Это инвестиция в ваше будущее здоровье.'),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Center(
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          SizedBox.square(
+                            dimension: 240,
+                            child: CircularProgressIndicator(
+                              value: 1 - current / goal,
+                              strokeCap: StrokeCap.round,
+                              color: theme.colorScheme.primary,
+                              backgroundColor:
+                                  theme.colorScheme.primary.withOpacity(0.2),
+                              strokeWidth: 24,
+                              strokeAlign: -1,
+                            ),
                           ),
-                        ),
-                        Text.rich(
-                          TextSpan(
-                            children: [
-                              const TextSpan(text: 'Осталось\n'),
-                              TextSpan(
-                                text: '$current',
-                                style: theme.textTheme.headline?.copyWith(
-                                  color: theme.colorScheme.primary,
-                                  fontWeight: FontWeight.bold,
+                          Text.rich(
+                            TextSpan(
+                              children: [
+                                const TextSpan(text: 'Осталось\n'),
+                                TextSpan(
+                                  text: '$current',
+                                  style: theme.textTheme.headline?.copyWith(
+                                    color: theme.colorScheme.primary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              ),
-                              const TextSpan(text: '  из '),
-                              TextSpan(
-                                text: '$goal',
-                                style: theme.textTheme.title?.copyWith(
-                                  color: theme.colorScheme.primary,
-                                  fontWeight: FontWeight.bold,
+                                const TextSpan(text: '  из '),
+                                TextSpan(
+                                  text: '$goal',
+                                  style: theme.textTheme.title?.copyWith(
+                                    color: theme.colorScheme.primary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              ),
-                              const TextSpan(text: '\nтренировок'),
-                            ],
+                                const TextSpan(text: '\nтренировок'),
+                              ],
+                            ),
+                            style: theme.textTheme.body,
+                            textAlign: TextAlign.center,
                           ),
-                          style: theme.textTheme.body,
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: CupertinoButton.filled(
-                    child: const Text('Я потренировалась'),
-                    onPressed: () {
-                      SystemSound.play(SystemSoundType.click);
+                  Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: CupertinoButton.filled(
+                      child: const Text('Я потренировалась'),
+                      onPressed: () {
+                        SystemSound.play(SystemSoundType.click);
 
-                      final newCurrent = current - 1;
-                      if (newCurrent <= 0) {
-                        goalPref.setValue(0);
-                        currentPref.setValue(-1);
-                      } else {
-                        currentPref.setValue(newCurrent);
-                      }
-                    },
+                        final newCurrent = current - 1;
+                        final isTen =
+                            checkTransition(goal, current, newCurrent);
+
+                        if (isTen) {
+                          confettiController.play();
+                        }
+
+                        if (newCurrent <= 0) {
+                          goalPref.setValue(0);
+                          currentPref.setValue(-1);
+                        } else {
+                          currentPref.setValue(newCurrent);
+                        }
+                      },
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }
@@ -393,4 +425,15 @@ class _SelectGoalDialogState extends State<SelectGoalDialog> {
       ],
     );
   }
+}
+
+/// Проверяет, если переход от [current] к [newCurrent] перешагнул 10% от [goal]
+bool checkTransition(int goal, int current, int newCurrent) {
+  for (int i = 10; i <= 100; i += 10) {
+    int checkPoint = (goal * i) ~/ 100;
+    if (current > checkPoint && newCurrent <= checkPoint) {
+      return true;
+    }
+  }
+  return false;
 }
