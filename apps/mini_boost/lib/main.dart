@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:home_widget/home_widget.dart';
 import 'package:mini_design/base.dart';
 import 'package:mini_design/components.dart';
 import 'package:rxdart/rxdart.dart';
@@ -9,6 +10,7 @@ import 'package:streaming_shared_preferences/streaming_shared_preferences.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final sharedPreferences = await StreamingSharedPreferences.instance;
+  HomeWidgetManager(sharedPreferences: sharedPreferences).init();
   runApp(App(sharedPreferences: sharedPreferences));
 }
 
@@ -34,8 +36,33 @@ class SharedPreferencesWidget extends InheritedWidget {
     return preferences(context).getInt('goal', defaultValue: 0);
   }
 
-  static Preference<int> howManyLeft(BuildContext context) {
-    return preferences(context).getInt('how_many_left', defaultValue: -1);
+  static Preference<int> currentLeft(BuildContext context) {
+    return preferences(context).getInt('current', defaultValue: -1);
+  }
+}
+
+class HomeWidgetManager {
+  final StreamingSharedPreferences sharedPreferences;
+
+  const HomeWidgetManager({
+    required this.sharedPreferences,
+  });
+
+  Future<void> init() async {
+    await HomeWidget.setAppGroupId('group.tv.vrk.mini.boost');
+
+    final goalPref = sharedPreferences.getInt('goal', defaultValue: 0);
+    final currentPref = sharedPreferences.getInt('current', defaultValue: -1);
+
+    goalPref.listen((value) {
+      HomeWidget.saveWidgetData('goal', value)
+          .then((value) => HomeWidget.updateWidget(iOSName: 'Widgets'));
+    });
+
+    currentPref.listen((value) {
+      HomeWidget.saveWidgetData('current', value)
+          .then((value) => HomeWidget.updateWidget(iOSName: 'Widgets'));
+    });
   }
 }
 
@@ -92,22 +119,22 @@ class Body extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final goalPref = SharedPreferencesWidget.goal(context);
-    final howManyPref = SharedPreferencesWidget.howManyLeft(context);
+    final currentPref = SharedPreferencesWidget.currentLeft(context);
 
     return StreamBuilder(
       stream: CombineLatestStream.combine2(
         goalPref,
-        howManyPref,
-        (goal, howMany) => (goal, howMany),
+        currentPref,
+        (goal, current) => (goal, current),
       ),
-      initialData: (goalPref.getValue(), howManyPref.getValue()),
+      initialData: (goalPref.getValue(), currentPref.getValue()),
       builder: (context, snapshot) {
         final data = snapshot.data!;
 
         final theme = Theme.of(context);
 
         final goal = data.$1;
-        final howMany = data.$2;
+        final current = data.$2;
 
         if (goal == 0) {
           return const SetGoalBody();
@@ -134,7 +161,7 @@ class Body extends StatelessWidget {
                         SizedBox.square(
                           dimension: 240,
                           child: CircularProgressIndicator(
-                            value: 1 - howMany / goal,
+                            value: 1 - current / goal,
                             strokeCap: StrokeCap.round,
                             color: theme.colorScheme.primary,
                             backgroundColor:
@@ -148,7 +175,7 @@ class Body extends StatelessWidget {
                             children: [
                               const TextSpan(text: 'Осталось\n'),
                               TextSpan(
-                                text: '$howMany',
+                                text: '$current',
                                 style: theme.textTheme.headline?.copyWith(
                                   color: theme.colorScheme.primary,
                                   fontWeight: FontWeight.bold,
@@ -179,12 +206,12 @@ class Body extends StatelessWidget {
                     onPressed: () {
                       SystemSound.play(SystemSoundType.click);
 
-                      final newHowMany = howMany - 1;
-                      if (newHowMany <= 0) {
+                      final newCurrent = current - 1;
+                      if (newCurrent <= 0) {
                         goalPref.setValue(0);
-                        howManyPref.setValue(-1);
+                        currentPref.setValue(-1);
                       } else {
-                        howManyPref.setValue(newHowMany);
+                        currentPref.setValue(newCurrent);
                       }
                     },
                   ),
@@ -246,14 +273,14 @@ class SetGoalBody extends StatelessWidget {
               child: const Text('Установить цель'),
               onPressed: () {
                 final goalPref = SharedPreferencesWidget.goal(context);
-                final howManyLeftPref =
-                    SharedPreferencesWidget.howManyLeft(context);
+                final currentPref =
+                    SharedPreferencesWidget.currentLeft(context);
 
                 showSelectGoalDialog(context: context).then(
                   (goal) {
                     if (goal != null) {
                       goalPref.setValue(goal);
-                      howManyLeftPref.setValue(goal);
+                      currentPref.setValue(goal);
                     }
                   },
                 );
