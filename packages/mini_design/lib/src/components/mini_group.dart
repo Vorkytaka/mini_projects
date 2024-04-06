@@ -41,10 +41,12 @@ class MiniGroupDivider extends StatelessWidget {
 class MiniGroup extends StatelessWidget {
   final Widget? header;
   final Widget child;
+  final Widget? footer;
 
   const MiniGroup({
     required this.child,
     this.header,
+    this.footer,
     super.key,
   });
 
@@ -64,6 +66,7 @@ class MiniGroup extends StatelessWidget {
           clipBehavior: Clip.hardEdge,
           child: child,
         ),
+        if (footer != null) MiniGroupFooter(footer: footer!),
       ],
     );
   }
@@ -127,6 +130,31 @@ class MiniGroupHeader extends StatelessWidget {
       child: DefaultTextStyle.merge(
         style: headerTextStyle,
         child: header,
+      ),
+    );
+  }
+}
+
+class MiniGroupFooter extends StatelessWidget {
+  final Widget footer;
+
+  const MiniGroupFooter({
+    required this.footer,
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    final footerTextStyle = theme.textTheme.label?.copyWith(
+      letterSpacing: 0,
+    );
+    return Padding(
+      padding: const EdgeInsetsDirectional.fromSTEB(16, 5, 16, 0),
+      child: DefaultTextStyle.merge(
+        style: footerTextStyle,
+        child: footer,
       ),
     );
   }

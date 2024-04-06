@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:home_widget/home_widget.dart';
 import 'package:mini_design/base.dart';
 import 'package:mini_design/components.dart';
 import 'package:rxdart/rxdart.dart';
@@ -70,10 +69,11 @@ class MainScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const RevertBackgroundTheme(
       child: Scaffold(
+        resizeToAvoidBottomInset: false,
         body: CustomScrollView(
           slivers: [
             CupertinoSliverNavigationBar(
-              largeTitle: Text('miniBoost'),
+              largeTitle: Text('Сводка'),
             ),
             SliverFillRemaining(
               hasScrollBody: false,
@@ -94,108 +94,219 @@ class Body extends StatelessWidget {
     final goalPref = SharedPreferencesWidget.goal(context);
     final howManyPref = SharedPreferencesWidget.howManyLeft(context);
 
-    return Column(
-      children: [
-        StreamBuilder(
-          stream: CombineLatestStream.combine2(
-            goalPref,
-            howManyPref,
-            (goal, howMany) => (goal, howMany),
+    return StreamBuilder(
+      stream: CombineLatestStream.combine2(
+        goalPref,
+        howManyPref,
+        (goal, howMany) => (goal, howMany),
+      ),
+      initialData: (goalPref.getValue(), howManyPref.getValue()),
+      builder: (context, snapshot) {
+        final data = snapshot.data!;
+
+        final theme = Theme.of(context);
+
+        final goal = data.$1;
+        final howMany = data.$2;
+
+        if (goal == 0) {
+          return const SetGoalBody();
+        }
+
+        return Padding(
+          padding: kGroupHorizontalPadding.copyWith(
+            top: 12,
           ),
-          initialData: (goalPref.getValue(), howManyPref.getValue()),
-          builder: (context, snapshot) {
-            final data = snapshot.data!;
-
-            final theme = Theme.of(context);
-
-            final goal = data.$1;
-            final howMany = data.$2;
-
-            if (goal == 0) {
-              return Padding(
-                padding: const EdgeInsets.all(12),
-                child: CupertinoButton.filled(
-                  child: const Text('Установить цель'),
-                  onPressed: () {
-                    final goalPref = SharedPreferencesWidget.goal(context);
-                    final howManyLeftPref =
-                        SharedPreferencesWidget.howManyLeft(context);
-
-                    showSelectGoalDialog(context: context).then(
-                      (goal) {
-                        if (goal != null) {
-                          goalPref.setValue(goal);
-                          howManyLeftPref.setValue(goal);
-                        }
-                      },
-                    );
-                  },
-                ),
-              );
-            }
-
-            return Padding(
-              padding: kGroupHorizontalPadding.copyWith(
-                top: 12,
-              ),
-              child: MiniGroup(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    MiniListTile(
-                      leading: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          CircularProgressIndicator(
-                            value: howMany / goal,
+          child: MiniGroup(
+            footer: const Text(
+                'Регулярные тренировки в спортзале укрепляют тело, повышают выносливость, улучшают обмен веществ и снижают стресс. Это инвестиция в ваше будущее здоровье.'),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Center(
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        SizedBox.square(
+                          dimension: 240,
+                          child: CircularProgressIndicator(
+                            value: 1 - howMany / goal,
                             strokeCap: StrokeCap.round,
-                            backgroundColor: Colors.red,
-                            strokeWidth: 6,
-                          ),
-                          Icon(
-                            Icons.fitness_center_rounded,
                             color: theme.colorScheme.primary,
-                          )
-                        ],
-                      ),
-                      title: Text.rich(
-                        TextSpan(
-                          children: [
-                            const TextSpan(text: 'Осталось '),
-                            TextSpan(
-                              text: '$howMany',
-                              style: theme.textTheme.title,
-                            ),
-                            TextSpan(text: ' из $goal'),
-                          ],
+                            backgroundColor:
+                                theme.colorScheme.primary.withOpacity(0.2),
+                            strokeWidth: 24,
+                            strokeAlign: -1,
+                          ),
                         ),
-                        style: theme.textTheme.body,
-                      ),
+                        Text.rich(
+                          TextSpan(
+                            children: [
+                              const TextSpan(text: 'Осталось\n'),
+                              TextSpan(
+                                text: '$howMany',
+                                style: theme.textTheme.headline?.copyWith(
+                                  color: theme.colorScheme.primary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const TextSpan(text: '  из '),
+                              TextSpan(
+                                text: '$goal',
+                                style: theme.textTheme.title?.copyWith(
+                                  color: theme.colorScheme.primary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const TextSpan(text: '\nтренировок'),
+                            ],
+                          ),
+                          style: theme.textTheme.body,
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
                     ),
-                    Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: CupertinoButton.filled(
-                        child: const Text('Я потренировалась'),
-                        onPressed: () {
-                          SystemSound.play(SystemSoundType.click);
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: CupertinoButton.filled(
+                    child: const Text('Я потренировалась'),
+                    onPressed: () {
+                      SystemSound.play(SystemSoundType.click);
 
-                          final newHowMany = howMany - 1;
-                          if (newHowMany <= 0) {
-                            goalPref.setValue(0);
-                            howManyPref.setValue(-1);
-                          } else {
-                            howManyPref.setValue(newHowMany);
-                          }
-                        },
-                      ),
+                      final newHowMany = howMany - 1;
+                      if (newHowMany <= 0) {
+                        goalPref.setValue(0);
+                        howManyPref.setValue(-1);
+                      } else {
+                        howManyPref.setValue(newHowMany);
+                      }
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class SetGoalBody extends StatelessWidget {
+  const SetGoalBody({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          mainAxisSize: MainAxisSize.max,
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Expanded(
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: 20,
+                ),
+                child: Column(
+                  children: [
+                    HintItem(
+                      icon: Text('🏅'),
+                      title: Text('Отслеживайте прогресс'),
+                      description: Text(
+                          'Наше приложение подсчитывает и показывает, сколько осталось тренировок до конца года.'),
+                    ),
+                    SizedBox(height: 32),
+                    HintItem(
+                      icon: Text('🏊‍♀️'),
+                      title: Text('Регулярные тренировки'),
+                      description: Text(
+                          'Приложение помогает вам не пропускать тренировки и держать ритм.'),
+                    ),
+                    SizedBox(height: 32),
+                    HintItem(
+                      icon: Text('🎯'),
+                      title: Text('Мотивирует на успех'),
+                      description: Text(
+                          'Визуализация прогресса способствует поддержанию мотивации и улучшению результатов.'),
                     ),
                   ],
                 ),
               ),
-            );
-          },
+            ),
+            CupertinoButton.filled(
+              child: const Text('Установить цель'),
+              onPressed: () {
+                final goalPref = SharedPreferencesWidget.goal(context);
+                final howManyLeftPref =
+                    SharedPreferencesWidget.howManyLeft(context);
+
+                showSelectGoalDialog(context: context).then(
+                  (goal) {
+                    if (goal != null) {
+                      goalPref.setValue(goal);
+                      howManyLeftPref.setValue(goal);
+                    }
+                  },
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class HintItem extends StatelessWidget {
+  final Widget icon;
+  final Widget title;
+  final Widget description;
+
+  const HintItem({
+    required this.icon,
+    required this.title,
+    required this.description,
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Row(
+      children: [
+        DefaultTextStyle.merge(
+          style: const TextStyle(fontSize: 56),
+          child: icon,
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              DefaultTextStyle.merge(
+                style:
+                    theme.textTheme.body?.copyWith(fontWeight: FontWeight.bold),
+                child: title,
+              ),
+              const SizedBox(height: 4),
+              DefaultTextStyle.merge(
+                style: theme.textTheme.body?.copyWith(height: 1.4),
+                child: description,
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -236,11 +347,12 @@ class _SelectGoalDialogState extends State<SelectGoalDialog> {
             autofocus: true,
             onChanged: (str) {
               final goal = int.tryParse(str);
-              if (goal != null) {
-                setState(() {
-                  _goal = goal;
-                });
+              if (goal != null && goal > 0) {
+                _goal = goal;
+              } else {
+                _goal = null;
               }
+              setState(() {});
             },
           ),
         ],
