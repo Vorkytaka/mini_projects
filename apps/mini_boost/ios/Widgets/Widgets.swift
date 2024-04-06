@@ -12,7 +12,7 @@ struct Provider: TimelineProvider {
     func placeholder(in context: Context) -> SimpleEntry {
         SimpleEntry(date: .now, goal: 100, current: 60)
     }
-
+    
     func getSnapshot(in context: Context, completion: @escaping (SimpleEntry) -> ()) {
         let data = UserDefaults.init(suiteName: "group.tv.vrk.mini.boost")
         let goal = data?.integer(forKey: "goal") ?? 111
@@ -20,13 +20,13 @@ struct Provider: TimelineProvider {
         let entry = SimpleEntry(date: .now, goal: goal, current: current)
         completion(entry)
     }
-
+    
     func getTimeline(in context: Context, completion: @escaping (Timeline<Entry>) -> ()) {
         getSnapshot(in: context) { (entry) in
-          let timeline = Timeline(entries: [entry], policy: .atEnd)
-          completion(timeline)
+            let timeline = Timeline(entries: [entry], policy: .atEnd)
+            completion(timeline)
         }
-      }
+    }
 }
 
 struct SimpleEntry: TimelineEntry {
@@ -37,42 +37,42 @@ struct SimpleEntry: TimelineEntry {
 
 struct WidgetsEntryView : View {
     var entry: Provider.Entry
-
-        var body: some View {
-            if entry.goal > 0 {
-                let color = Color(red: 0.1294117647, green: 0.6235294118, blue: 0.9529411765)
-                let backgroundColor = color.opacity(0.2)
-                
-                ZStack(alignment: .center) {
-                    Circle()
-                        .stroke(backgroundColor, style: StrokeStyle(lineWidth: 12, lineCap: .round))
-                    Circle()
-                        .trim(from: 0.0, to: 1.0 - CGFloat(entry.current) / CGFloat(entry.goal))
-                        .stroke(color, style: StrokeStyle(lineWidth: 12, lineCap: .round))
-                        .rotationEffect(.degrees(-90))
-                    HStack(alignment: .firstTextBaseline, spacing: 0) {
-                        Text("\(entry.current)")
-                            .font(.largeTitle)
-                            .foregroundColor(color)
-                            .fontWeight(.bold)
-                        Text("/\(entry.goal)")
-                            .font(.body)
-                            .foregroundColor(.gray)
-                            .fontWeight(.bold)
-                    }
+    
+    var body: some View {
+        if entry.goal > 0 {
+            let color = Color(red: 0.1294117647, green: 0.6235294118, blue: 0.9529411765)
+            let backgroundColor = color.opacity(0.2)
+            
+            ZStack(alignment: .center) {
+                Circle()
+                    .stroke(backgroundColor, style: StrokeStyle(lineWidth: 12, lineCap: .round))
+                Circle()
+                    .trim(from: 0.0, to: 1.0 - CGFloat(entry.current) / CGFloat(entry.goal))
+                    .stroke(color, style: StrokeStyle(lineWidth: 12, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                HStack(alignment: .firstTextBaseline, spacing: 0) {
+                    Text("\(entry.current)")
+                        .font(.largeTitle)
+                        .foregroundColor(color)
+                        .fontWeight(.bold)
+                    Text("/\(entry.goal)")
+                        .font(.body)
+                        .foregroundColor(.gray)
+                        .fontWeight(.bold)
                 }
-            } else {
-                Text("Установите\nцель")
-                    .font(.system(size: 22))
-                    .fontWeight(.bold)
-                    .foregroundColor(.black)
             }
+        } else {
+            Text("Установите\nцель")
+                .font(.system(size: 22))
+                .fontWeight(.bold)
+                .foregroundColor(.black)
         }
+    }
 }
 
 struct Widgets: Widget {
     let kind: String = "Widgets"
-
+    
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: Provider()) { entry in
             if #available(iOS 17.0, *) {
@@ -84,8 +84,9 @@ struct Widgets: Widget {
                     .background()
             }
         }
-        .configurationDisplayName("My Widget")
-        .description("This is an example widget.")
+        .configurationDisplayName("Boostани")
+        .description("Следи за прогрессом где угодно.")
+        .supportedFamilies([.systemSmall])
     }
 }
 
@@ -94,16 +95,3 @@ struct Widgets: Widget {
 } timeline: {
     SimpleEntry(date: .now, goal: 100, current: 60)
 }
-
-//struct Widgets_Previews: PreviewProvider {
-//    static var previews: some View {
-//        Group {
-//            WidgetsEntryView(entry: SimpleEntry(date: Date(), goal: 100, current: 60))
-//                .previewContext(WidgetPreviewContext(family: .systemSmall))
-//            WidgetsEntryView(entry: SimpleEntry(date: Date(), goal: 100, current: 60))
-//                .previewContext(WidgetPreviewContext(family: .systemMedium))
-//            WidgetsEntryView(entry: SimpleEntry(date: Date(), goal: 100, current: 60))
-//                .previewContext(WidgetPreviewContext(family: .systemLarge))
-//        }
-//    }
-//}
